@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional aesthetic custom styles */
+body {
+  @apply bg-gradient-to-br from-rose-50 to-blue-50 text-gray-800;
+}
