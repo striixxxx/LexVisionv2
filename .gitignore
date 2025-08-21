@@ -1,0 +1,11 @@
+client/node_modules/
+client/dist/
+
+# Python / Backend
+server/__pycache__/
+server/*.pyc
+
+# OS / IDE files
+.DS_Store
+*.log
+.vscode/
