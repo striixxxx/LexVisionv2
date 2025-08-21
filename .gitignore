@@ -4,6 +4,7 @@ client/dist/
 # Python / Backend
 server/__pycache__/
 server/*.pyc
+server/.venv2/
 
 # OS / IDE files
 .DS_Store
