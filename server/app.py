@@ -5,8 +5,7 @@ import google.generativeai as genai
 import os, json, re
 from fastapi.staticfiles import StaticFiles
 app = FastAPI()
-# Serve frontend
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
 
 
 # ✅ Allow frontend to talk to backend
@@ -149,3 +148,6 @@ async def what_if(query: str = Form(...)):
     response = model.generate_content(whatif_prompt).text
 
     return {"response": response}
+
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
