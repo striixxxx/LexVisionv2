@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-genai.configure(api_key="AIzaSyDbXmJDH-YKP4NNiDpNE_CYzm0v_eiZhys")
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 last_document_text = ""
 last_document_text2 = ""  
