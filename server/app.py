@@ -4,11 +4,10 @@ import fitz  # PyMuPDF for PDF text extraction
 import google.generativeai as genai
 import os, json, re
 from fastapi.staticfiles import StaticFiles
-
+app = FastAPI()
 # Serve frontend
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
-app = FastAPI()
 
 # ✅ Allow frontend to talk to backend
 app.add_middleware(
