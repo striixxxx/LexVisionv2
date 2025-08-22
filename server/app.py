@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  # PyMuPDF for PDF text extraction
 import google.generativeai as genai
-import os
+import os, json, re
 
 app = FastAPI()
 
@@ -26,7 +26,7 @@ last_document_text2 = ""  # For second file
 async def analyze_document(
     file1: UploadFile = File(...),
     file2: UploadFile = File(None),
-    language: str = Form("English")  # 👈 default is English
+    language: str = Form("English")
 ):
     global last_document_text, last_document_text2
 
@@ -44,36 +44,93 @@ async def analyze_document(
     model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
     if file2:
-        # Compare two uploaded files
-        summary1_prompt = f"Summarize this legal document in 4–6 sentences in {language}:\n\n{text1}"
-        summary2_prompt = f"Summarize this legal document in 4–6 sentences in {language}:\n\n{text2}"
-        comparison_prompt = f"Compare these two legal documents and highlight differences and risks in {language}:\n\nDocument 1:\n{text1}\n\nDocument 2:\n{text2}"
+        # ----------------- COMPARE TWO FILES -----------------
+        summary1_prompt = f"Summarize this legal document in 4–6 sentences in {language} . simplify the language and techincial words:\n\n{text1}"
+        summary2_prompt = f"Summarize this legal document in 4–6 sentences in {language}  simplify the language and techincial words :\n\n{text2}"
+
+        comparison_prompt = f"""
+Compare the following two legal documents and return the result in **valid JSON** only in {language}. 
+Do not include any explanations outside JSON. Use this format:
+
+{{
+  "comparison": [
+    {{"aspect": "Aspect name", "doc1": "what doc1 says", "doc2": "what doc2 says"}}
+  ],
+  "favorability": {{
+    "doc1": <number between 0 and 100 indicating strength for doc1>,
+    "doc2": <number between 0 and 100 indicating strength for doc2>
+  }}
+}}
+
+Document 1:
+{text1}
+
+Document 2:
+{text2}
+"""
 
         summary1 = model.generate_content(summary1_prompt).text
         summary2 = model.generate_content(summary2_prompt).text
-        comparison = model.generate_content(comparison_prompt).text
+        comparison_raw = model.generate_content(comparison_prompt).text
+
+        # ✅ Safe JSON extraction
+        try:
+            match = re.search(r"\{.*\}", comparison_raw, re.DOTALL)
+            if match:
+                comparison_data = json.loads(match.group(0))
+            else:
+                comparison_data = {"comparison": [], "favorability": {"doc1": 50, "doc2": 50}}
+        except Exception:
+            comparison_data = {"comparison": [], "favorability": {"doc1": 50, "doc2": 50}}
 
         return {
             "main": "✅ Analysis complete: AI review finished.",
             "summary1": summary1,
             "summary2": summary2,
-            "comparison": comparison,
+            "comparison": comparison_data.get("comparison", []),
+            "favorability": comparison_data.get("favorability", {"doc1": 50, "doc2": 50}),
             "timeline": None
         }
 
     else:
-        # Single file → summarize, timeline, compare with standard file
-        summary_prompt = f"Summarize this legal document in 4–6 sentences in {language}:\n\n{text1}"
-        comparison_prompt = f"Compare this document to standard legal agreements. Highlight fairness, risks, and missing clauses. Keep it short. Don't give similarities, just red flags in the document in 4–5 lines in {language}:\n\n{text1}"
+        # ----------------- SINGLE FILE -----------------
+        summary_prompt = f"Summarize this legal document in 4–6 sentences in {language} . simplify the language and techincial words:\n\n{text1}"
+        comparison_prompt = f"""
+Analyze this legal document and return **valid JSON only**.
+Highlight these aspects: Fairness, Risks, Missing Clauses.
+Format:
+
+{{
+  "comparison": [
+    {{"aspect": "Fairness", "doc": "..."}},
+    {{"aspect": "Risks", "doc": "..."}},
+    {{"aspect": "Missing Clauses", "doc": "..."}}
+  ]
+}}
+
+Document:
+{text1}
+"""
         timeline_prompt = f"Just give timeline and important dates of the document in the specified format:\n\nDate:What happens (in one or two words)\nDate2:What happens\n\nJust return dates nothing else:\n\n{text1}"
 
         summary = model.generate_content(summary_prompt).text
-        comparison = model.generate_content(comparison_prompt).text
+        comparison_raw = model.generate_content(comparison_prompt).text
         timeline = model.generate_content(timeline_prompt).text
+
+        # ✅ Safe JSON extraction for table rendering
+        try:
+            match = re.search(r"\{.*\}", comparison_raw, re.DOTALL)
+            if match:
+                comparison_data = json.loads(match.group(0))
+            else:
+                comparison_data = {"comparison": []}
+        except Exception:
+            comparison_data = {"comparison": []}
+
         return {
             "main": "✅ Analysis complete: AI review finished.",
             "summary": summary,
-            "comparison": comparison,
+            "comparison": comparison_data.get("comparison", []),
             "timeline": timeline
         }
 
