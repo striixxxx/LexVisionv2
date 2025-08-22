@@ -92,6 +92,13 @@ export default function App() {
           <option value="Hindi">Hindi</option>
           <option value="French">French</option>
           <option value="Spanish">Spanish</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Bengali">Bengali</option>
+          <option value="Punjabi">Punjabi</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Marathi">Marathi</option>
+          <option value="Kannada">Kannada</option>
+          <option value="Gujarati">Gujarati</option>
         </select>
 
         {file1 && <p className="mt-2 text-gray-300 text-sm border-b border-gray-700 pb-1">📂 {file1.name}</p>}
