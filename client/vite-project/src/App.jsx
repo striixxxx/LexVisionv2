@@ -39,7 +39,7 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8001/analyze", { method: "POST", body: formData });
+      const response = await fetch("https://lexvisionv2-1.onrender.com/analyze", { method: "POST", body: formData });
       const data = await response.json();
       setResults(data);
     } catch (err) {
@@ -55,7 +55,7 @@ export default function App() {
     try {
       const formData = new FormData();
       formData.append("query", whatIfInput);
-      const response = await fetch("http://127.0.0.1:8001/whatif", { method: "POST", body: formData });
+      const response = await fetch("https://lexvisionv2-1.onrender.com/whatif", { method: "POST", body: formData });
       const data = await response.json();
       setWhatIfResponse(data.response);
     } catch (err) {
