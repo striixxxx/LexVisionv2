@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 # 🔑 Configure Gemini API key
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+genai.configure(api_key="AIzaSyDbXmJDH-YKP4NNiDpNE_CYzm0v_eiZhys")
 
 # Global variable to hold last uploaded document text
 last_document_text = ""
