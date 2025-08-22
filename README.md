@@ -36,11 +36,10 @@ Built to bridge the gap between **AI automation** and **professional legal exper
 ---
 
 ##  Tech Stack (Example)
-- **Frontend:** React.js / Next.js  
-- **Backend:** Node.js / FastAPI  
-- **AI Models:** OpenAI / LangChain / Custom NLP Models  
-- **Database:** PostgreSQL / MongoDB  
-- **Cloud & Deployment:** AWS / Azure / GCP  
+- **Frontend:** React.js + vite  
+- **Backend:**  FastAPI  
+- **AI Models:** Gemini / LangChain 
+- **Cloud & Deployment:** Render
 
 ---
 
