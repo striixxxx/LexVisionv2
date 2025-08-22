@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-import fitz  # PyMuPDF for PDF text extraction
+import fitz  
 import google.generativeai as genai
 import os, json, re
 from fastapi.staticfiles import StaticFiles
@@ -8,7 +8,6 @@ app = FastAPI()
 
 
 
-# ✅ Allow frontend to talk to backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,12 +16,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🔑 Configure Gemini API key
 genai.configure(api_key="AIzaSyDbXmJDH-YKP4NNiDpNE_CYzm0v_eiZhys")
 
-# Global variable to hold last uploaded document text
 last_document_text = ""
-last_document_text2 = ""  # For second file
+last_document_text2 = ""  
 
 @app.post("/analyze")
 async def analyze_document(
@@ -32,7 +29,6 @@ async def analyze_document(
 ):
     global last_document_text, last_document_text2
 
-    # 1. Extract text from PDF 1
     doc1 = fitz.open(stream=await file1.read(), filetype="pdf")
     text1 = "".join([page.get_text() for page in doc1])
     last_document_text = text1
@@ -75,7 +71,6 @@ Document 2:
         summary2 = model.generate_content(summary2_prompt).text
         comparison_raw = model.generate_content(comparison_prompt).text
 
-        # ✅ Safe JSON extraction
         try:
             match = re.search(r"\{.*\}", comparison_raw, re.DOTALL)
             if match:
@@ -119,7 +114,6 @@ Document:
         comparison_raw = model.generate_content(comparison_prompt).text
         timeline = model.generate_content(timeline_prompt).text
 
-        # ✅ Safe JSON extraction for table rendering
         try:
             match = re.search(r"\{.*\}", comparison_raw, re.DOTALL)
             if match:
