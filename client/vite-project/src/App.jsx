@@ -65,6 +65,25 @@ export default function App() {
     setWhatIfLoading(false);
   };
 
+  // ✅ NEW Export handler
+  const handleExport = async () => {
+    try {
+      const res = await fetch("/export", { method: "POST" });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "results.pdf"; // adjust if backend sends docx
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("Export error:", err);
+      alert("Failed to export results");
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white flex flex-col items-center px-6 py-10 relative">
       
@@ -109,7 +128,6 @@ export default function App() {
           <option value="Odia">Odia</option>
           <option value="Malayalam">Malayalam</option>
           <option value="Urdu">Urdu</option>
-
         </select>
 
         {file1 && <p className="mt-2 text-gray-300 text-sm border-b border-gray-700 pb-1">📂 {file1.name}</p>}
@@ -117,86 +135,96 @@ export default function App() {
       </div>
 
       {/* Results Section */}
-{results && (
-  <div className="pb-14 mt-12 w-full max-w-4xl grid gap-6 md:grid-cols-2">
-    {mode === "summarize" ? (
-      <>
-        <div className="bg-gradient-to-br from-green-500/20 to-green-900/40 border border-green-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
-          <h2 className="font-bold text-green-300 mb-2">📅 Timeline</h2>
-          <p className="text-gray-200 whitespace-pre-line">{results.timeline}</p>
-        </div>
-        <div className="bg-gradient-to-br from-blue-500/20 to-blue-900/40 border border-blue-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
-          <h2 className="font-bold text-blue-300 mb-2">📄 Summary ({language})</h2>
-          <p className="text-gray-200">{results.summary}</p>
-        </div>
-      </>
-    ) : (
-      <>
-        {/* Two Summaries */}
-        <div className="bg-gradient-to-br from-blue-500/20 to-blue-900/40 border border-blue-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
-          <h2 className="font-bold text-blue-300 mb-2">📄 Summary 1 ({language})</h2>
-          <p className="text-gray-200">{results.summary1}</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500/20 to-purple-900/40 border border-purple-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
-          <h2 className="font-bold text-purple-300 mb-2">📄 Summary 2 ({language})</h2>
-          <p className="text-gray-200">{results.summary2}</p>
-        </div>
+      {results && (
+        <div className="pb-14 mt-12 w-full max-w-4xl grid gap-6 md:grid-cols-2">
+          {/* Export Button */}
+          <div className="md:col-span-2 text-center mb-6">
+            <button
+              onClick={handleExport}
+              className="px-6 py-2 rounded-full font-bold bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 shadow-lg hover:scale-105 transition-transform"
+            >
+              📥 Export Results
+            </button>
+          </div>
 
-        {/* Comparison Table */}
-        <div className="md:col-span-2 bg-gradient-to-br from-yellow-500/20 to-yellow-900/40 border border-yellow-400 rounded-2xl p-6 shadow-lg">
-          <h2 className="font-bold text-yellow-300 mb-4">⚖️ Detailed Comparison</h2>
-          {Array.isArray(results.comparison) ? (
-            <table className="table-auto w-full border text-gray-200">
-              <thead>
-                <tr className="bg-yellow-700/40">
-                  <th className="p-2 border">Aspect</th>
-                  <th className="p-2 border">Document 1</th>
-                  <th className="p-2 border">Document 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.comparison.map((row, idx) => (
-                  <tr key={idx} className="border">
-                    <td className="p-2 border font-semibold">{row.aspect}</td>
-                    <td className="p-2 border">{row.doc1}</td>
-                    <td className="p-2 border">{row.doc2}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {mode === "summarize" ? (
+            <>
+              <div className="bg-gradient-to-br from-green-500/20 to-green-900/40 border border-green-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
+                <h2 className="font-bold text-green-300 mb-2">📅 Timeline</h2>
+                <p className="text-gray-200 whitespace-pre-line">{results.timeline}</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-900/40 border border-blue-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
+                <h2 className="font-bold text-blue-300 mb-2">📄 Summary ({language})</h2>
+                <p className="text-gray-200">{results.summary}</p>
+              </div>
+            </>
           ) : (
-            <p className="text-gray-200">{results.comparison}</p>
+            <>
+              {/* Two Summaries */}
+              <div className="bg-gradient-to-br from-blue-500/20 to-blue-900/40 border border-blue-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
+                <h2 className="font-bold text-blue-300 mb-2">📄 Summary 1 ({language})</h2>
+                <p className="text-gray-200">{results.summary1}</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500/20 to-purple-900/40 border border-purple-400 rounded-2xl p-6 shadow-lg hover:scale-105 transition">
+                <h2 className="font-bold text-purple-300 mb-2">📄 Summary 2 ({language})</h2>
+                <p className="text-gray-200">{results.summary2}</p>
+              </div>
+
+              {/* Comparison Table */}
+              <div className="md:col-span-2 bg-gradient-to-br from-yellow-500/20 to-yellow-900/40 border border-yellow-400 rounded-2xl p-6 shadow-lg">
+                <h2 className="font-bold text-yellow-300 mb-4">⚖️ Detailed Comparison</h2>
+                {Array.isArray(results.comparison) ? (
+                  <table className="table-auto w-full border text-gray-200">
+                    <thead>
+                      <tr className="bg-yellow-700/40">
+                        <th className="p-2 border">Aspect</th>
+                        <th className="p-2 border">Document 1</th>
+                        <th className="p-2 border">Document 2</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.comparison.map((row, idx) => (
+                        <tr key={idx} className="border">
+                          <td className="p-2 border font-semibold">{row.aspect}</td>
+                          <td className="p-2 border">{row.doc1}</td>
+                          <td className="p-2 border">{row.doc2}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-gray-200">{results.comparison}</p>
+                )}
+              </div>
+
+              {/* Favorability Pie Chart */}
+              {results.favorability && (
+                <div className="md:col-span-2 bg-gradient-to-br from-purple-500/20 to-purple-900/40 border border-purple-400 rounded-2xl p-6 shadow-lg flex flex-col items-center">
+                  <h2 className="font-bold text-purple-300 mb-4">📊 Favorability</h2>
+                  <PieChart width={400} height={300}>
+                    <Pie
+                      data={[
+                        { name: "Document 1", value: results.favorability.doc1 },
+                        { name: "Document 2", value: results.favorability.doc2 },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      dataKey="value"
+                      label
+                    >
+                      <Cell fill="#22c55e" />
+                      <Cell fill="#ef4444" />
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </div>
+              )}
+            </>
           )}
         </div>
-
-        {/* Favorability Pie Chart */}
-        {results.favorability && (
-          <div className="md:col-span-2 bg-gradient-to-br from-purple-500/20 to-purple-900/40 border border-purple-400 rounded-2xl p-6 shadow-lg flex flex-col items-center">
-            <h2 className="font-bold text-purple-300 mb-4">📊 Favorability</h2>
-            <PieChart width={400} height={300}>
-              <Pie
-                data={[
-                  { name: "Document 1", value: results.favorability.doc1 },
-                  { name: "Document 2", value: results.favorability.doc2 },
-                ]}
-                cx="50%"
-                cy="50%"
-                outerRadius={120}
-                dataKey="value"
-                label
-              >
-                <Cell fill="#22c55e" />
-                <Cell fill="#ef4444" />
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </div>
-        )}
-      </>
-    )}
-  </div>
-)}
+      )}
 
       {/* Fixed bottom-right gradient button */}
       <button

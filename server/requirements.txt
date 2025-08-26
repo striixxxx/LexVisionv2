@@ -5,3 +5,5 @@ python-multipart
 google-genai
 pydantic
 google.generativeai
+reportlab
+python-docx

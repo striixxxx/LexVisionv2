@@ -1,12 +1,15 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 import fitz  
 import google.generativeai as genai
 import os, json, re
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from docx import Document
+
 app = FastAPI()
-
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +21,7 @@ app.add_middleware(
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+last_results = {}   # store last AI results for export
 last_document_text = ""
 last_document_text2 = ""  
 
@@ -27,7 +31,7 @@ async def analyze_document(
     file2: UploadFile = File(None),
     language: str = Form("English")
 ):
-    global last_document_text, last_document_text2
+    global last_document_text, last_document_text2, last_results
 
     doc1 = fitz.open(stream=await file1.read(), filetype="pdf")
     text1 = "".join([page.get_text() for page in doc1])
@@ -42,9 +46,8 @@ async def analyze_document(
     model = genai.GenerativeModel("gemini-2.5-flash-lite")
 
     if file2:
-        # ----------------- COMPARE TWO FILES -----------------
         summary1_prompt = f"Summarize this legal document in 4–6 sentences in {language} . simplify the language and techincial words:\n\n{text1}"
-        summary2_prompt = f"Summarize this legal document in 4–6 sentences in {language}  simplify the language and techincial words :\n\n{text2}"
+        summary2_prompt = f"Summarize this legal document in 4–6 sentences in {language} simplify the language and techincial words :\n\n{text2}"
 
         comparison_prompt = f"""
 Compare the following two legal documents and return the result in **valid JSON** only in {language}. 
@@ -66,7 +69,6 @@ Document 1:
 Document 2:
 {text2}
 """
-
         summary1 = model.generate_content(summary1_prompt).text
         summary2 = model.generate_content(summary2_prompt).text
         comparison_raw = model.generate_content(comparison_prompt).text
@@ -80,17 +82,20 @@ Document 2:
         except Exception:
             comparison_data = {"comparison": [], "favorability": {"doc1": 50, "doc2": 50}}
 
-        return {
-            "main": "✅ Analysis complete: AI review finished.",
+        last_results = {
             "summary1": summary1,
             "summary2": summary2,
             "comparison": comparison_data.get("comparison", []),
-            "favorability": comparison_data.get("favorability", {"doc1": 50, "doc2": 50}),
+            "favorability": comparison_data.get("favorability", {"doc1": 50, "doc2": 50})
+        }
+
+        return {
+            "main": "✅ Analysis complete: AI review finished.",
+            **last_results,
             "timeline": None
         }
 
     else:
-        # ----------------- SINGLE FILE -----------------
         summary_prompt = f"Summarize this legal document in 4–6 sentences in {language} . simplify the language and techincial words:\n\n{text1}"
         comparison_prompt = f"""
 Analyze this legal document and return **valid JSON only**.
@@ -123,11 +128,15 @@ Document:
         except Exception:
             comparison_data = {"comparison": []}
 
-        return {
-            "main": "✅ Analysis complete: AI review finished.",
+        last_results = {
             "summary": summary,
             "comparison": comparison_data.get("comparison", []),
             "timeline": timeline
+        }
+
+        return {
+            "main": "✅ Analysis complete: AI review finished.",
+            **last_results
         }
 
 
@@ -143,5 +152,57 @@ async def what_if(query: str = Form(...)):
 
     return {"response": response}
 
+@app.post("/export")
+async def export_results(format: str = Body("pdf")):
+    if not last_results:
+        return {"error": "No analysis to export!"}
 
+    if format == "pdf":
+        return await export_pdf()
+    elif format == "word":
+        return await export_word()
+    else:
+        return {"error": "Unsupported format"}
+# ---------- NEW EXPORT ENDPOINTS ----------
+@app.get("/export/pdf")
+async def export_pdf():
+    if not last_results:
+        return {"error": "No analysis to export!"}
+
+    file_path = "analysis_export.pdf"
+    c = canvas.Canvas(file_path, pagesize=letter)
+    y = 750
+    c.setFont("Helvetica", 12)
+    for key, value in last_results.items():
+        c.drawString(50, y, f"{key}:")
+        y -= 20
+        if isinstance(value, list):
+            for v in value:
+                c.drawString(70, y, str(v))
+                y -= 20
+        else:
+            c.drawString(70, y, str(value))
+            y -= 40
+    c.save()
+    return FileResponse(file_path, filename="analysis_export.pdf", media_type="application/pdf")
+
+@app.get("/export/word")
+async def export_word():
+    if not last_results:
+        return {"error": "No analysis to export!"}
+
+    file_path = "analysis_export.docx"
+    doc = Document()
+    doc.add_heading("LexVision AI Analysis", level=1)
+    for key, value in last_results.items():
+        doc.add_heading(key, level=2)
+        if isinstance(value, list):
+            for v in value:
+                doc.add_paragraph(str(v))
+        else:
+            doc.add_paragraph(str(value))
+    doc.save(file_path)
+    return FileResponse(file_path, filename="analysis_export.docx", media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+
+# Serve frontend
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
