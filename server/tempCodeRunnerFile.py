@@ -49,8 +49,8 @@ async def analyze_document(
     # --------- TWO DOCUMENTS (COMPARE) ---------
     if file2:
         if summaryMode == "concise":
-            summary1_prompt = f"Summarize this legal document in 10–15 sentences in {language}, simple words:\n\n{text1}"
-            summary2_prompt = f"Summarize this legal document in 10–15 sentences in {language}, simple words:\n\n{text2}"
+            summary1_prompt = f"Summarize this legal document in 3–5 short sentences in {language}, simple words:\n\n{text1}"
+            summary2_prompt = f"Summarize this legal document in 3–5 short sentences in {language}, simple words:\n\n{text2}"
         else:
             summary1_prompt = f"Write a detailed and elaborate summary of this legal document in {language}, covering key clauses:\n\n{text1}"
             summary2_prompt = f"Write a detailed and elaborate summary of this legal document in {language}, covering key clauses:\n\n{text2}"
@@ -104,7 +104,7 @@ Document 2:
     # --------- SINGLE DOCUMENT (SUMMARY + TIMELINE) ---------
     else:
         if summaryMode == "concise":
-            summary_prompt = f"Summarize this legal document in 14-15 sentences in {language}, simple words:\n\n{text1}"
+            summary_prompt = f"Summarize this legal document in 3–5 short sentences in {language}, simple words:\n\n{text1}"
         else:
             summary_prompt = f"Write a detailed and elaborate summary of this legal document in {language}, covering all important clauses:\n\n{text1}"
 
@@ -176,134 +176,45 @@ async def export_results(format: str = Body("pdf")):
         return {"error": "Unsupported format"}
 
 # ---------- NEW EXPORT ENDPOINTS ----------
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
-
 @app.get("/export/pdf")
 async def export_pdf():
     if not last_results:
         return {"error": "No analysis to export!"}
 
-    from reportlab.lib.pagesizes import letter
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
-    from fastapi.responses import FileResponse
-
     file_path = "analysis_export.pdf"
-    doc = SimpleDocTemplate(file_path, pagesize=letter)
-    elements = []
-    styles = getSampleStyleSheet()
-
-    # Title
-    elements.append(Paragraph("LexVision AI Analysis", styles["Title"]))
-    elements.append(Spacer(1, 12))
-
-    # Summary
-    if "summary" in last_results:
-        elements.append(Paragraph("<b>Summary</b>", styles["Heading2"]))
-        elements.append(Paragraph(last_results["summary"], styles["Normal"]))
-        elements.append(Spacer(1, 12))
-
-    if "summary1" in last_results and "summary2" in last_results:
-        elements.append(Paragraph("<b>Summary - Document 1</b>", styles["Heading2"]))
-        elements.append(Paragraph(last_results["summary1"], styles["Normal"]))
-        elements.append(Spacer(1, 8))
-        elements.append(Paragraph("<b>Summary - Document 2</b>", styles["Heading2"]))
-        elements.append(Paragraph(last_results["summary2"], styles["Normal"]))
-        elements.append(Spacer(1, 12))
-
-    # Comparison (bullet style instead of table)
-    if "comparison" in last_results and last_results["comparison"]:
-        elements.append(Paragraph("<b>Comparison</b>", styles["Heading2"]))
-        for row in last_results["comparison"]:
-            aspect = row.get("aspect", "Unknown Aspect")
-            elements.append(Paragraph(f"<b>Aspect:</b> {aspect}", styles["Normal"]))
-            if "doc1" in row:
-                elements.append(Paragraph(f"• Document 1 → {row['doc1']}", styles["Normal"]))
-            if "doc2" in row:
-                elements.append(Paragraph(f"• Document 2 → {row['doc2']}", styles["Normal"]))
-            if "doc" in row:
-                elements.append(Paragraph(f"• Details → {row['doc']}", styles["Normal"]))
-            elements.append(Spacer(1, 8))
-
-    # Favorability (bullet style instead of table)
-    if "favorability" in last_results:
-        elements.append(Paragraph("<b>Favorability</b>", styles["Heading2"]))
-        fav = last_results["favorability"]
-        if fav.get("doc1"):
-            elements.append(Paragraph(f"• Document 1 → {fav['doc1']}", styles["Normal"]))
-        if fav.get("doc2"):
-            elements.append(Paragraph(f"• Document 2 → {fav['doc2']}", styles["Normal"]))
-        elements.append(Spacer(1, 12))
-
-    # Timeline
-    if "timeline" in last_results and last_results["timeline"]:
-        elements.append(Paragraph("<b>Timeline</b>", styles["Heading2"]))
-        for line in last_results["timeline"].splitlines():
-            elements.append(Paragraph(f"• {line}", styles["Normal"]))
-        elements.append(Spacer(1, 12))
-
-    doc.build(elements)
-
-    return FileResponse(
-        file_path,
-        filename="analysis_export.pdf",
-        media_type="application/pdf"
-    )
-
+    c = canvas.Canvas(file_path, pagesize=letter)
+    y = 750
+    c.setFont("Helvetica", 12)
+    for key, value in last_results.items():
+        c.drawString(50, y, f"{key}:")
+        y -= 20
+        if isinstance(value, list):
+            for v in value:
+                c.drawString(70, y, str(v))
+                y -= 20
+        else:
+            c.drawString(70, y, str(value))
+            y -= 40
+    c.save()
+    return FileResponse(file_path, filename="analysis_export.pdf", media_type="application/pdf")
 
 @app.get("/export/word")
 async def export_word():
     if not last_results:
         return {"error": "No analysis to export!"}
 
-    from docx.shared import Pt, Inches
-    from docx.oxml.ns import qn
-    from docx.oxml import OxmlElement
-
     file_path = "analysis_export.docx"
     doc = Document()
     doc.add_heading("LexVision AI Analysis", level=1)
-
     for key, value in last_results.items():
         doc.add_heading(key, level=2)
-
         if isinstance(value, list):
-            # Create table: 2 columns -> Aspect & Content
-            table = doc.add_table(rows=1, cols=2)
-            table.style = "Light Grid Accent 1"
-
-            hdr_cells = table.rows[0].cells
-            hdr_cells[0].text = "Aspect"
-            hdr_cells[1].text = "Details"
-
             for v in value:
-                row_cells = table.add_row().cells
-                if isinstance(v, dict):
-                    row_cells[0].text = str(v.get("aspect", ""))
-                    row_cells[1].text = str(v.get("doc", v.get("doc1", "")))
-                else:
-                    row_cells[0].text = "-"
-                    row_cells[1].text = str(v)
-
-            # add spacing after each table
-            doc.add_paragraph("")
+                doc.add_paragraph(str(v))
         else:
             doc.add_paragraph(str(value))
-
-    # Formatting: set font size small for readability
-    style = doc.styles["Normal"]
-    font = style.font
-    font.name = "Calibri"
-    font.size = Pt(11)
-
     doc.save(file_path)
-    return FileResponse(
-        file_path,
-        filename="analysis_export.docx",
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
+    return FileResponse(file_path, filename="analysis_export.docx", media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 # Serve frontend
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
