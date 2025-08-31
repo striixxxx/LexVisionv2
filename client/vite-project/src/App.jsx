@@ -147,9 +147,9 @@ export default function App() {
       {/* Header */}
       <header className="mb-12 text-center">
         <h1 className="text-6xl font-extrabold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
-          ⚡ LexVision AI ⚖️
+          ⚖️ LexVision AI ⚖️
         </h1>
-        <p className="mt-3 text-lg text-gray-300 tracking-wide">Upload a legal PDF & let AI analyze it with style ✨</p>
+        <p className="mt-3 text-lg text-gray-300 tracking-wide">Upload a legal PDF & let AI analyze it with style</p>
       </header>
 
       {/* Mode Buttons */}
@@ -178,7 +178,7 @@ export default function App() {
             <input type="file" onChange={(e) => handleFileChange(e, 2)} className="w-full text-gray-300 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-cyan-500 file:to-blue-500 file:text-white hover:file:opacity-80" />
           )}
           <button onClick={handleUpload} disabled={loading} className="px-6 py-2 rounded-full font-bold bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 shadow-[0_0_20px_rgba(59,130,246,0.8)] hover:scale-105 transition-transform w-full max-w-xs">
-            {loading ? "⏳ Analyzing..." : "🚀 Upload & Analyze"}
+            {loading ? "⏳ Analyzing..." : "Upload & Analyze"}
           </button>
         </div>
 
@@ -358,13 +358,13 @@ export default function App() {
           {whatIfResponse && (
             <div className="relative mx-4 bg-gradient-to-br from-gray-950 to-blue-950 border border-gray-700 rounded-xl p-4 shadow-lg max-h-40 overflow-y-auto">
               <button onClick={() => setWhatIfResponse(null)} className="absolute top-2 right-2 text-gray-400 hover:text-red-400 text-lg font-bold">✕</button>
-              <h2 className="font-bold text-purple-300 mb-1">💡 What If Response</h2>
+              <h2 className="font-bold text-purple-300 mb-1">What If Response</h2>
               <p className="text-gray-200 text-sm">{whatIfResponse}</p>
             </div>
           )}
 
           <div className="bg-gradient-to-r from-gray-800 via-gray-900 to-black border-t border-gray-700 p-4 flex items-center gap-3">
-            <input type="text" value={whatIfInput} onChange={(e) => setWhatIfInput(e.target.value)} placeholder="🤔 What if I break the..." className="flex-grow px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            <input type="text" value={whatIfInput} onChange={(e) => setWhatIfInput(e.target.value)} placeholder="🔍| What if I break the..." className="flex-grow px-4 py-2 rounded-full bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
             <button onClick={handleWhatIf} disabled={whatIfLoading} className="px-6 py-2 rounded-full font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 shadow-md hover:scale-105 transition-transform">
               {whatIfLoading ? "Thinking..." : "Ask"}
             </button>
