@@ -147,7 +147,7 @@ export default function App() {
       {/* Header */}
       <header className="mb-12 text-center">
         <h1 className="text-6xl font-extrabold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">
-          ⚡ LexVision AI ⚖️
+          ⚡ Lawgic AI ⚖️
         </h1>
         <p className="mt-3 text-lg text-gray-300 tracking-wide">Upload a legal PDF & let AI analyze it with style ✨</p>
       </header>
